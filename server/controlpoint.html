@@ -1,0 +1,56 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>mbedJS Refrector</title>  
+	<style>
+	.header{
+		text-align:center;
+	}
+	.header b{
+		font-size:32pt;
+	}
+	</style>
+	<script src="./extlib/jquery-2.1.1.js"></script>
+	<script src="./ajaxsocket.js"></script>
+	<script>
+	var c=1;
+	$(document).ready(function(){
+        $("#stop").click(function(){
+        	mjs.close();
+        	mjs=null;
+        });		
+		
+		var mjs=new AjaxSocket("./ajaxsocket.php?sid=testid0000&cmd=connect","controlpoint");
+		function test(){
+			if(mjs && mjs._opened){
+				mjs.send("-"+c+",");
+				c++;
+			}
+			setTimeout(test,500);
+		}
+		test();
+		mjs.onOpen=function(){
+			__log("mjs.onopen");
+			setTimeout(test,1000);
+		};
+		mjs.onClose=function(){
+			__log("mjs.onclose");
+		};
+		mjs.onError=function(){
+			__log("mjs.onerror");
+		};
+		mjs.onMessage=function(m){
+			__log("mjs.onmessage:"+m);
+		}
+	});
+	
+	</script>
+</head>
+<body>
+<p>
+	<button id="stop">Stop</button>
+<textarea id="recv">
+</textarea>
+</p>
+</body>
+</html>

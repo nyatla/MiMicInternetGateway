@@ -1,0 +1,82 @@
+<!DOCTYPE html>  
+<html lang="ja">  
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>mbedJS Refrector</title>  
+	<style>
+	.header{
+		text-align:center;
+	}
+	.header b{
+		font-size:32pt;
+	}
+	</style>
+	<script src="./ajaxsocket.js"></script>
+	<script src="./endpoint.js"></script>
+	<script src="./extlib/jquery-2.1.1.js"></script>
+	<script>
+	function uiSetup()
+	{
+		
+	}
+	
+	$(document).ready(function(){
+		var cn=new Content();
+        $("#start").click(function(){
+        	//mbed接続テスト
+        	
+        	cn.start("ws://192.168.128.39:80/rpc/");
+        	cn.onOnline=function(v){
+            	alert("online!"+v);
+            }
+        	cn.onOffline=function(){
+            	alert("offline!+v");
+        	}
+        	cn.onOpen=function(){
+        		
+        	}
+        	cn.onClose=function(){
+        		
+        	}
+        	cn.onMessage=function(v){
+        		__log(v);
+        	}
+        });
+        $("#stop").click(function(){
+        	cn.stop();
+        });
+	});
+
+	</script>
+</head>
+<body>
+<h1>mbedJS Internet Gateway</h1>
+<hr/>
+<p>
+mbedJSをインターネットで共有する為のシステムです。
+</p>
+
+<h2>STEP1</h2>
+mbedJSをセットアップしたmbedを共有システムに接続します。<br/>
+ローカルネットワークに接続したmbedJSのIPアドレスを入力して、Startボタンを押してください。<br/>
+<div>
+<input type="text" value="" readonly id="addr"></input><button id="start">Start</button>
+</div>
+<h2>STEP2</h2>
+mbedJSがオンラインになりました！<br/>
+発行されたURLを利用者に知らせてください。<br/>
+<div>
+	<input type="text" value="" readonly></input>
+</div>
+<h2>STEP3</h2>
+mbedJSのオンライン共有を停止するにはStopボタンを押してください。
+<div>
+	<button id="stop">Stop</button>
+</div>
+
+<div class="footer">
+	MiMic project<br/>
+	Copyright (C) 2011-2013 <a href="http://nyatla.jp/">nyatla.jp</a> All Rights Reserved.
+</div>
+</body>
+</html>
