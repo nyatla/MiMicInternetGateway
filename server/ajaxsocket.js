@@ -63,7 +63,7 @@ function Ajax(i_url,i_cb,i_delay)
 
 AjaxSocket=function(i_url,i_type)
 {
-	var ENDPOINT_REFRESH=5000;
+	var ENDPOINT_REFRESH=1000;
 	var CTRLPOINT_REFRESH=1000;
 	var _t=this;
 	_t._type=i_type;
@@ -76,11 +76,12 @@ AjaxSocket=function(i_url,i_type)
 				var last_ckey="";
 				var json=eval('('+v+')');
 				_t._url=_t._url+"?sid="+json.sid+"&key="+json.key+"&";
-				if(_t.onConnect){_t.onConnect(i_url+"?sid="+json.sid+"&cmd=connect");}
 				_t._connected=true;
+				if(_t.onConnect){_t.onConnect(i_url+"?sid="+json.sid+"&cmd=connect");}
+				var rx_q="";
 				function f(i_delay){
 					var tx=_t._tx_q;
-					_t._tx_q="";				
+					_t._tx_q="";
 					return new Ajax(_t._url+"cmd=sync&payload="+encodeURIComponent(tx),
 					{
 						onSuccess:function(v){
@@ -98,12 +99,16 @@ AjaxSocket=function(i_url,i_type)
 							}else{
 								if(last_ckey.length==0){
 									//新キー有効、旧キー無効ならOPEN
-									if(_t.onOpen){_t.onOpen();}
 									_t._opened=true;//OPEN
+									if(_t.onOpen){_t.onOpen();}
+									//CtrlPointとの時差でExを受信してることがある。
+									rx_q+=json.payload;
 								}else{
 									if(last_ckey==json.ckey){
 										//新旧キー同一かつ新キー有効ならMessage
-										if(_t.onMessage){_t.onMessage(json.payload);}
+										rx_q+=json.payload;
+										if(_t.onMessage){_t.onMessage(rx_q);}
+										rx_q="";
 									}else{
 										//エラーじゃない？ありえないよ？
 										alert("ERROR? ARIENE-YO!");
@@ -136,11 +141,11 @@ AjaxSocket=function(i_url,i_type)
 			onSuccess:function(v){
 				_t._tx_q="";		
 				var json=eval('('+v+')');
+				_t._connected=true;
+				_t._opened=true;
 				if(_t.onConnect){_t.onConnect();}
 				if(_t.onOpen){_t.onOpen();}
 				_t._url=_t._url+"?sid="+json.sid+"&key="+json.key;
-				_t._connected=true;
-				_t._opened=true;
 				function f(i_delay){
 					var tx=_t._tx_q;
 					_t._tx_q="";
@@ -219,6 +224,7 @@ AjaxSocket.prototype=
 	},
 	send:function(v){
 		if(this._opened){
+			__log("add:"+this._tx_q);
 			this._tx_q+=v;
 			return true;
 		}

@@ -21,17 +21,10 @@
         });		
 		
 		var mjs=new AjaxSocket("./ajaxsocket.php?sid=testid0000&cmd=connect","controlpoint");
-		function test(){
-			if(mjs && mjs._opened){
-				mjs.send("-"+c+",");
-				c++;
-			}
-			setTimeout(test,500);
-		}
-		test();
+
 		mjs.onOpen=function(){
-			__log("mjs.onopen");
-			setTimeout(test,1000);
+			__log("mjs.onOpen");
+			mjs.send('{"method":"mbedJS:Mcu:getInfo","jsonrpc":"2.0","params":[],"id":0}');
 		};
 		mjs.onClose=function(){
 			__log("mjs.onclose");

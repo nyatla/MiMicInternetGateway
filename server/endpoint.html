@@ -11,36 +11,59 @@
 		font-size:32pt;
 	}
 	</style>
-	<script src="./ajaxsocket.js"></script>
-	<script src="./endpoint.js"></script>
-	<script src="./extlib/jquery-2.1.1.js"></script>
+	<script type="text/javascript" src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
+	<script type="text/javascript" src="./ajaxsocket.js"></script>
+	<script type="text/javascript" src="./endpoint.js"></script>
+	<script type="text/javascript" src="./extlib/jquery-2.1.1.js"></script>
 	<script>
-	function uiSetup()
-	{
-		
+	//mbedの接続テスト
+	function testMbed(v,cb){
+		var ret=null;
+		var mcu=new mbedJS.Mcu(v,{
+			onNew:function(){
+				mcu.getInfo(function(v){
+					ret=v;mcu.close();
+				});
+			},
+			onClose:function(){
+				cb(ret);
+			},
+			onError:function(){
+				cb(null);
+			}
+		});
 	}
 	
 	$(document).ready(function(){
 		var cn=new Content();
         $("#start").click(function(){
         	//mbed接続テスト
-        	
-        	cn.start("ws://192.168.128.39:80/rpc/");
-        	cn.onOnline=function(v){
-            	alert("online!"+v);
-            }
-        	cn.onOffline=function(){
-            	alert("offline!+v");
-        	}
-        	cn.onOpen=function(){
-        		
-        	}
-        	cn.onClose=function(){
-        		
-        	}
-        	cn.onMessage=function(v){
-        		__log(v);
-        	}
+        	testMbed("192.168.128.39:80",
+        	function(r){
+        		if(r){
+	    			alert(r);
+	            	cn.start("ws://192.168.128.39:80/rpc/");
+	            	cn.onOnline=function(v){
+	            		//mbedがオンラインになった。アクセスID発行した。
+	                	alert("online!"+v);
+	                };
+	            	cn.onOffline=function(){
+	            		//mbedがオフラインになった
+	                	alert("offline!+v");
+	            	};
+	            	cn.onOpen=function(){
+	            		//相手がオープンした
+	            	};
+	            	cn.onClose=function(){
+	            		//相手がクローズした
+	            	};
+	            	cn.onMessage=function(v){
+	            		__log(v);
+	            	};
+        		}else{
+        			//mbedに接続できませんね。
+        		}
+        	});
         });
         $("#stop").click(function(){
         	cn.stop();

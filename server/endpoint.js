@@ -18,18 +18,18 @@ function testMbedJs(i_ws_url,i_cb)
 {
 	var mcu=new Mcu(i_ws_url,
 	{
-		var ret=null;
-		onNew(){
+		onNew:function(){
+			var ret=null;
 			mcu.getInfo(
 				function(v){
 					ret=v;
 					mcu.close();
 				});
 		},
-		onError(){
+		onError:function(){
 			cb(null);
 		},
-		onClose(){
+		onClose:function(){
 			cb(ret);
 		}
 	});
@@ -61,13 +61,14 @@ function Content()
 	/**
 	 * Websocketの全てのイベントをキャンセルして利用不能にする。
 	 */
-	shutdownWs()
+	function shutdownWs()
 	{
 		if(ws){
 			ws.onopen=function(){ws.close();};
 			ws.onmessage=function(){ws.close();};
 			ws.onclose=function(){ws=null;};
 			ws.onerror=function(){ws=null;};
+			ws.close();
 			ws=null;
 		}
 	}
@@ -98,7 +99,9 @@ function Content()
 			ws.onopen = function(){
 				if(_t.onWsOpen){_t.onWsOnen();}
 			}
-			ws.onmessage=function(m){				
+			ws.onmessage=function(m){		
+				__log("ws:"+m.data);
+				mjs.send(m.data);
 				if(_t.onWsRx){_t.onWsRx();}
 			}
 		};
@@ -112,7 +115,7 @@ function Content()
 			shutdownWs();
 			if(_t.onOffLine){_t.onOffLine();}
 		};
-		mjs.onDissconnect=function(){
+		mjs.onDisconnect=function(){
 			__log("mjs.onDisconnect");
 			shutdownWs();
 			if(_t.onOffLine){_t.onOffLine();}
