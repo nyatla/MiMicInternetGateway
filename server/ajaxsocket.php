@@ -1,13 +1,14 @@
 <?php
-require_once("Logger.php");
+//require_once("Logger.php");
 require_once("Io.php");
-$logger=new Logger();
+//$logger=new Logger();
 function logging($v)
 {
 	global $logger;
-	$logger->log($v);
+//	$logger->log($v);
 }
 const ST_IDLE=1;
+const DATA_PATH="data/";
 
 class SockFile
 {
@@ -76,11 +77,11 @@ class SockFile
 	}	
 	public static function filename($i_sid)
 	{
-		return $i_sid.'.fifo.txt';
+		return DATA_PATH.$i_sid.'.fifo.txt';
 	}
 	public static function remove($i_sid)
 	{
-		$fn=$i_sid.'.fifo.txt';
+		$fn=DATA_PATH.$i_sid.'.fifo.txt';
 		if(file_exists($fn)){
 			logging("unlink!");
 			unlink($fn);
@@ -131,8 +132,8 @@ function e_listen()
 	flock($fp,LOCK_EX);
 	$f=new SockFile($fp);
 	$f->e_time=$now;
-	$f->e_key='E0000';
-//	$f->e_key='E'.uniqid();
+//	$f->e_key='E0000';
+	$f->e_key='E'.uniqid();
 	$f->write($fp);
 	flock($fp,LOCK_UN);
 	fclose($fp);	

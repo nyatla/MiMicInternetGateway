@@ -60,7 +60,29 @@ function Ajax(i_url,i_cb,i_delay)
 	}
 	return new f();
 }
-
+/**
+ * @callback onConnect
+ * endpoint
+ * 	中継サービスとの接続に成功したとき
+ * controlpoint
+ * 	中継サービスとの接続に成功したとき
+ * @callback onClose
+ * endpoint
+ * 	CPの切断を検出したとき
+ * controlpoint
+ * 	closeが完了したとき
+ * @callback onOpen
+ * endpoint
+ * 	CPの接続を検出したとき
+ * controlpoint
+ * 	中継サービスとの接続に成功したとき(onConnectの次に発生)
+ * @callback onMessage
+ * endpoint/controlpoint
+ * メッセージを受信したとき
+ * @callback onError
+ * endpoint/controlpoint
+ * 	通信エラーが発生したとき
+ */
 AjaxSocket=function(i_url,i_type)
 {
 	var ENDPOINT_REFRESH=1000;
@@ -107,7 +129,9 @@ AjaxSocket=function(i_url,i_type)
 									if(last_ckey==json.ckey){
 										//新旧キー同一かつ新キー有効ならMessage
 										rx_q+=json.payload;
-										if(_t.onMessage){_t.onMessage(rx_q);}
+										if(rx_q.length>0){
+											if(_t.onMessage){_t.onMessage(rx_q);}
+										}
 										rx_q="";
 									}else{
 										//エラーじゃない？ありえないよ？
@@ -143,22 +167,21 @@ AjaxSocket=function(i_url,i_type)
 				var json=eval('('+v+')');
 				_t._connected=true;
 				_t._opened=true;
-				if(_t.onConnect){_t.onConnect();}
-				if(_t.onOpen){_t.onOpen();}
 				_t._url=_t._url+"?sid="+json.sid+"&key="+json.key;
 				function f(i_delay){
 					var tx=_t._tx_q;
 					_t._tx_q="";
+					__log("sync...");
 					return new Ajax(_t._url+"&cmd=sync&payload="+encodeURIComponent(tx),
 					{
 						onSuccess:function(v){
 							var json=eval('('+v+')');
-							__log("CC:"+v);
 							__log("Cp:"+json.payload);
 							if(_t.onMessage){_t.onMessage(json.payload);}
 							_t.last_ajax=f(CTRLPOINT_REFRESH);
 						},
 						onError:function(){
+							__log("Cp:Error1");
 							_t.last_ajax=null;
 							_t._connected=false;
 							_t._opened=false;
@@ -167,8 +190,11 @@ AjaxSocket=function(i_url,i_type)
 					},i_delay);
 				}
 				_t.last_ajax=f();
+				if(_t.onConnect){_t.onConnect();}
+				if(_t.onOpen){_t.onOpen();}
 			},
 			onError:function(){
+				__log("Cp:Error2");
 				_t.last_ajax=null;
 				if(_t.onError){_t.onError();}
 			}
@@ -179,6 +205,7 @@ AjaxSocket=function(i_url,i_type)
 AjaxSocket.prototype=
 {
 	_connected:false,
+	//Peerと接続している場合true
 	_opend:false,
 	_type:null,
 	_tx_q:null,
@@ -199,6 +226,7 @@ AjaxSocket.prototype=
 	//AjaxSocketのクローズ
 	close:function(){
 		var _t=this;
+		__log(_t.last_ajax);
 		if(_t.last_ajax){
 			_t.last_ajax.cancel();
 		}
@@ -222,6 +250,34 @@ AjaxSocket.prototype=
 		}
 		this._connected=false;
 	},
+	/**
+	 * Peerコネクションを強制切断(endpointのみ)
+	 * @callback onClose
+	 * Peerのクローズに成功
+	 * @callback onError
+	 * 通信に失敗
+	 */
+	resetPeer:function(){
+		var _t=this;
+		if(_t._type!="endpoint"){
+			return;
+		}
+		if(_t.last_ajax){
+			_t.last_ajax.cancel();
+		}
+		if(_t._connected){
+			var a=new Ajax(_t._url+"&cmd=resetpeer",{
+				onSuccess:function(){
+					if(_t.onClose){_t.onClose();}
+				},
+				onError:function(){
+					//失敗時は切断要求
+					_t.close();
+				}
+			});
+		}
+		_t._opened=false;
+	},	
 	send:function(v){
 		if(this._opened){
 			__log("add:"+this._tx_q);
@@ -229,6 +285,7 @@ AjaxSocket.prototype=
 			return true;
 		}
 		return false;
-	}
+	},
+
 }
 }());

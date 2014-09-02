@@ -1,16 +1,4 @@
 
-function AjaxWs()
-{
-}
-AjaxWs.prototype=
-{
-	onopen:function(){
-		
-	},
-	onerror:function(){
-		
-	}
-}
 /**
  * mbedへの接続テスト
  */
@@ -44,14 +32,18 @@ function testMbedJs(i_ws_url,i_cb)
  * サービスがオンラインになった。
  * onOffline
  * サービスがオフラインになった。
+ * onOpen
+ * CPからの接続を検出した。
+ * onClose
+ * CPからの切断を検出した。
+ * onError
+ * サービスでエラーが発生した。(オフラインになった)
  * onWsError
- * WSセッションで復帰可能なエラーが発生した
+ * Notify:WSセッションで復帰可能なエラーが発生した(CPは切断される)
  * onWsClose
- * WSセッションで復帰可能なクローズが発生した
- * onWsOpen
- * WSセッションが開かれた
+ * Notify:WSセッションで復帰可能なクローズが発生した(CPは切断される)
  * onWsRx
- * WSセッションで受信イベントが発生した
+ * Notify:WSセッションで受信イベントが発生した
  */
 function Content()
 {
@@ -76,54 +68,75 @@ function Content()
 		if(mjs){
 			throw "already started!"
 		}
+		//フルパス再構築
+		var full_path=location.href;
+		full_path=full_path.slice(0,full_path.lastIndexOf("/")+1);
+		full_path+="ajaxsocket.php";
 		//AjaxSocketの開始
-		mjs=new AjaxSocket("./ajaxsocket.php","endpoint");
+		mjs=new AjaxSocket(full_path,"endpoint");
 		mjs.onConnect=function(v){
 			__log("mjs.onConnect");
 			if(_t.onOnline){_t.onOnline(v);}
 		};
 		mjs.onOpen=function(){
 			__log("mjs.onOpen");
-			if(_t.onOffLine){_t.onOffLine();}
+			if(_t.onOpen){_t.onOpen();}
 			
 			ws=new WebSocket(i_ws_url);
 			ws.onclose = function(){
-				//クローズ→ws再接続待機
+				__log("mjs.onClose");
+				//サービス有効ならコントロールポイントの接続を破棄
+				if(mjs){
+					//WebsocketServerから切断された場合
+					mjs.resetPeer();
+				}
+				//クローズ通知
 				if(_t.onWsClose){_t.onWsClose();}
 			};
 			ws.onerror = function(){
+				__log("mjs.onError");
+				//サービス有効ならコントロールポイントの接続を破棄
+				if(mjs){
+					//WebsocketServerから切断された場合
+					mjs.resetPeer();
+				}
 				ws=null;
-				//エラー発生→ws再接続待機
+				//エラー通知
 				if(_t.onWsError){_t.onWsError();}
 			};
 			ws.onopen = function(){
 				if(_t.onWsOpen){_t.onWsOnen();}
 			}
-			ws.onmessage=function(m){		
+			ws.onmessage=function(m){
 				__log("ws:"+m.data);
 				mjs.send(m.data);
-				if(_t.onWsRx){_t.onWsRx();}
+				//受信通知
+				if(_t.onWsTx){_t.onWsTx(m.data);}
 			}
 		};
 		mjs.onError=function(){
+			//サービスとの接続エラー
 			__log("mjs.onError");
 			shutdownWs();
-			if(_t.onOffLine){_t.onOffLine();}
+			if(_t.onError){_t.onError();}
 		};
 		mjs.onClose=function(){
+			//CPからの切断要求
 			__log("mjs.onClose");
 			shutdownWs();
-			if(_t.onOffLine){_t.onOffLine();}
+			if(_t.onClose){_t.onClose();}
 		};
 		mjs.onDisconnect=function(){
+			//サービスとの切断
 			__log("mjs.onDisconnect");
 			shutdownWs();
-			if(_t.onOffLine){_t.onOffLine();}
+			if(_t.onOffline){_t.onOffline();}
 		};
 		
 		mjs.onMessage=function(m){
 			__log("mjs.onMessage:"+m);
 			if(ws){
+				if(_t.onWsRx){_t.onWsRx(m);}				
 				ws.send(m);
 			}
 		}
@@ -133,6 +146,7 @@ function Content()
 			throw "already stopped!"
 		}
 		mjs.close();//ERRORかCLOSEが出るからそこでのソケットシャットダウンに期待
+		//サービス参照の無効化
 		mjs=null;
 	}
 }

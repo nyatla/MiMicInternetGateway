@@ -12,30 +12,22 @@
 	</style>
 	<script src="./extlib/jquery-2.1.1.js"></script>
 	<script src="./ajaxsocket.js"></script>
+<!-- <script src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
+-->
+	<script src="/mbedjs/core/mbed.types.js"></script>
+	<script src="/mbedjs/core/MiMicCore.js"></script>
+	<script src="/mbedjs/core/mbed.Mcu.js"></script>
+	<script src="./mimicigs.js"></script>
 	<script>
-	var c=1;
 	$(document).ready(function(){
-        $("#stop").click(function(){
-        	mjs.close();
-        	mjs=null;
-        });		
-		
-		var mjs=new AjaxSocket("./ajaxsocket.php?sid=testid0000&cmd=connect","controlpoint");
-
-		mjs.onOpen=function(){
-			__log("mjs.onOpen");
-			mjs.send('{"method":"mbedJS:Mcu:getInfo","jsonrpc":"2.0","params":[],"id":0}');
-		};
-		mjs.onClose=function(){
-			__log("mjs.onclose");
-		};
-		mjs.onError=function(){
-			__log("mjs.onerror");
-		};
-		mjs.onMessage=function(m){
-			__log("mjs.onmessage:"+m);
-		}
+		var mcu=new MiMicIGS.Mcu("http://127.0.0.1/mjsk/server/ajaxsocket.php?sid=testid0000&cmd=connect",{onNew:function(){
+			mcu.getInfo(function(v){
+				alert(v);
+				mcu.close();
+			})
+		}});
 	});
+
 	
 	</script>
 </head>
