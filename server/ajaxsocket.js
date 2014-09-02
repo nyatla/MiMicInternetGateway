@@ -1,5 +1,5 @@
 function __log(v){
-	console.info(v);
+//	console.info(v);
 }
 var AjaxSoxcket=null;
 (function(){

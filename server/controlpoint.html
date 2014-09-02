@@ -1,26 +1,14 @@
 <html>
 <head>
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-	<title>mbedJS Refrector</title>  
-	<style>
-	.header{
-		text-align:center;
-	}
-	.header b{
-		font-size:32pt;
-	}
-	</style>
+	<title>mbedJS IGS Led Blink</title>  
 	<script src="./extlib/jquery-2.1.1.js"></script>
 	<script src="./ajaxsocket.js"></script>
-<!-- <script src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
--->
-	<script src="/mbedjs/core/mbed.types.js"></script>
-	<script src="/mbedjs/core/MiMicCore.js"></script>
-	<script src="/mbedjs/core/mbed.Mcu.js"></script>
+	<script src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
 	<script src="./mimicigs.js"></script>
 	<script>
 	$(document).ready(function(){
-		var mcu=new MiMicIGS.Mcu("http://127.0.0.1/mjsk/server/ajaxsocket.php?sid=testid0000&cmd=connect",{onNew:function(){
+		var mcu=new MiMicIGS.Mcu("http://127.0.0.1/mjsk/server/ajaxsocket.php?sid=54056a1255ea7&cmd=connect",{onNew:function(){
 			mcu.getInfo(function(v){
 				alert(v);
 				mcu.close();
@@ -32,10 +20,8 @@
 	</script>
 </head>
 <body>
-<p>
-	<button id="stop">Stop</button>
-<textarea id="recv">
-</textarea>
-</p>
+<h2>Endpoint URL</h2>
+<input type="text" value=""></input><br/>
+<button>Start!</button>
 </body>
 </html>

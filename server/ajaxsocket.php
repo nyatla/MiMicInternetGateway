@@ -117,8 +117,8 @@ function e_listen()
 		//sidがセットされてたらそのエンドポイントを削除
 		killSession($_REQUEST['sid']);
 	}
-	$sid="testid0000";
-	//	$sid'=uniqid();
+//	$sid="testid0000";
+	$sid=uniqid();
 	//新規作成
 	$fp = @fopen(SockFile::filename($sid),"a+");
 	if($fp===FALSE){
