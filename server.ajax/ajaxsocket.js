@@ -10,8 +10,9 @@ var AjaxSoxcket=null;
  */
 function Ajax(i_url,i_cb,i_delay)
 {
-	var AJAX_RETRY=1000;
+	var AJAX_RETRY=1500;
 	var retry=3;
+	var sq=0;
 	function f(){
 		var xhr=null;
 	    var tid=null;
@@ -23,7 +24,7 @@ function Ajax(i_url,i_cb,i_delay)
 		    	if((retry--)>0){
 			    	tid=setTimeout(doAjex,AJAX_RETRY);
 		    	}else{
-//		    		__log("ajax:error");
+		    		__log("ajax:error");
 		    		if(i_cb.onError){i_cb.onError();}
 		    	}
 		    }
@@ -31,7 +32,7 @@ function Ajax(i_url,i_cb,i_delay)
 		    	tid=null;
 		    	if(i_cb.onSuccess){
 		    		if(xhr.status==200){
-//		    			__log("ajax:success");		    			
+		    			__log("ajax:success");		    			
 		        		i_cb.onSuccess(xhr.responseText);
 		    		}else{
 		    			callError();
@@ -42,7 +43,8 @@ function Ajax(i_url,i_cb,i_delay)
 		    	tid=null;
 				callError();
 		    }
-		    xhr.open("GET",i_url,true);
+		    xhr.open("GET",i_url+"&sq="+sq,true);
+		    sq++;
 		    xhr.send(null);
 		}
 	    this.cancel=function(){
@@ -85,8 +87,8 @@ function Ajax(i_url,i_cb,i_delay)
  */
 AjaxSocket=function(i_url,i_type)
 {
-	var ENDPOINT_REFRESH=1000;
-	var CTRLPOINT_REFRESH=1000;
+	var ENDPOINT_REFRESH=1500;
+	var CTRLPOINT_REFRESH=1500;
 	var _t=this;
 	_t._type=i_type;
 	_t._tx_q="";
@@ -163,6 +165,7 @@ AjaxSocket=function(i_url,i_type)
 		_t._last_ajax=Ajax(i_url,
 		{
 			onSuccess:function(v){
+				__log("connect to...");
 				_t._tx_q="";		
 				var json=eval('('+v+')');
 				_t._connected=true;

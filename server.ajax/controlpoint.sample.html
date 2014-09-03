@@ -1,0 +1,45 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>mbedJS IGS Led Blink</title>  
+	<script src="./extlib/jquery-2.1.1.js"></script>
+	<script src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
+<!-- <script src="./mimicigs.cp.js"></script> -->	
+	<script src="./ajaxsocket.js"></script>
+	<script src="./mimicigs.api.js"></script>
+	<script>
+	$("document").ready(function(){
+		$("#start").click(function(){
+			$("#start").attr('disabled',true);
+			var mcu=new MiMicIGS.Mcu($("#addr").val(),{
+				onNew:function(){
+					var c=0;
+					var pin=new mbedJS.DigitalOut(mcu,mbedJS.PinName.LED1,function(){
+						function f(){
+							pin.write((c++)%2,function(){
+								f();
+							});
+						}
+						f();
+					});
+				},
+				onError:function(){
+					alert("Error!");
+					$("#start").attr('disabled',false);
+				},
+				onClose:function(){
+					alert("Close!");
+					$("#start").attr('disabled',false);
+				}
+			});
+		});
+	});
+	</script>
+</head>
+<body>
+<h2>Endpoint URL</h2>
+<div>エンドポイントで発行したURLを入力してください。</div>
+<input id="addr" style="width:600px" type="text" value=""></input><br/>
+<button id="start">Start!</button>
+</body>
+</html>

@@ -98,7 +98,7 @@ function killSession($i_sid=FALSE)
 	if($i_sid!==FALSE){
 		SockFile::remove($i_sid);
 	}
-	header('HTTP', true, 500);
+	header('HTTP', true, 400);
 	echo "error";
 }
 //セッション情報の記録
@@ -177,7 +177,7 @@ function e_sync()
 		//エンドポイントキーが不一致なら何もしない。
 		flock($fp, LOCK_UN);
 		fclose($fp);
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		logging(__line__);
 		return;
 	}
@@ -213,13 +213,13 @@ function c_sync()
 	logging("<c_sync>");
 	if(!isset($_REQUEST['sid'])){
 		logging(__line__);
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		return;
 	}
 	$sid=$_REQUEST['sid'];
 	if(!isset($_REQUEST['key'])){
 		logging(__line__);
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		return;
 	}
 	$ckey=$_REQUEST['key'];
@@ -238,7 +238,7 @@ function c_sync()
 		//エンドポイントキーが不一致なら何もしない。
 		flock($fp, LOCK_UN);
 		fclose($fp);
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		logging(__line__);
 		return;
 	}
@@ -246,7 +246,7 @@ function c_sync()
 		//コントロールポイントがタイムアウト済ならエラーっすよ
 		flock($fp, LOCK_UN);
 		fclose($fp);
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		logging(__line__);
 		return;
 	}
@@ -255,7 +255,7 @@ function c_sync()
 		$f->c_time=0;
 		flock($fp, LOCK_UN);
 		fclose($fp);
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		logging(__line__);
 	}
 	$rx=(isset($_REQUEST['payload'])?$_REQUEST['payload']:"");
@@ -289,7 +289,7 @@ function c_connect()
 	$fp = @fopen(SockFile::filename($sid),"r+");
 	if($fp===FALSE){
 		logging(__line__);
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		return;
 	}
 	$is_success=false;
@@ -317,7 +317,7 @@ function c_connect()
 		echo('{"sid":"'.$sid.'","key":"'.$f->c_key.'"}');
 	}else{
 		logging(__line__);
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 	}
 	logging("</connect>");
 	return;
@@ -331,7 +331,7 @@ function e_close()
 		SockFile::remove($_REQUEST['sid']);
 		logging(__line__);
 	}else{
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		logging(__line__);
 	}
 	logging("</e_close>");
@@ -340,13 +340,13 @@ function c_close()
 {
 	logging("<c_close>");
 	if(!isset($_REQUEST['sid'])){
-		header('HTTP', true, 500);
+		header('HTTP', true, 400);
 		logging(__line__);
 	}else{
 		$fp = @fopen(SockFile::filename($_REQUEST['sid']),"r+");
 		if($fp===FALSE){
 			logging(__line__);
-			header('HTTP', true, 500);
+			header('HTTP', true, 400);
 			return;
 		}
 		//強制的にタイムアウトさせる

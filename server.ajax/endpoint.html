@@ -91,10 +91,10 @@
            		logger.info("コントロールポイントがクローズしました。");
            	};
            	cn.onWsOpen=function(){
-           		logger.info("Close in local Websocket connection");
+           		logger.info("Open in local Websocket connection");
            	};           	
            	cn.onWsClose=function(){
-           		logger.info("Open in local Websocket connection");
+           		logger.info("Close in local Websocket connection");
            	};           	
            	cn.onWsRx=function(v){
            		logger.rx(v);
@@ -301,6 +301,9 @@
 		<li>開発・運営者は、本システムを利用したことにより発生した全ての損害、及び、第三者に与えた全ての損害に対して、一切の責任を負いません</li>
 		</ul>
 	</div>
+	<div class="text-center" style="clear:both">
+		MiMic project<br/>Copyright (C) 2011-2014 <a href="http://nyatla.jp/">nyatla.jp</a> All Rights Reserved.
+	</div>	
 </div>
 <div id="content">
 	<span>mbadJS Internet Gateway</span>
@@ -335,6 +338,7 @@
 </div>
 
 </div>
+
 
 
 
