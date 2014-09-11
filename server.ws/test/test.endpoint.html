@@ -1,0 +1,79 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>mbedJS IGS Led Blink</title>  
+	<script src="../extlib/jquery-2.1.1.js"></script>
+	<script src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
+	<script>
+	$("document").ready(function(){
+		var cp_ws;
+		var ep_ws;
+		
+		function startEp(){
+			var s;
+			ep_ws=new WebSocket("ws://127.0.0.1:9300/endpt");
+			ep_ws.onopen=function(){
+				console.info("ep:open");
+				s=0;
+			};
+			ep_ws.onmessage=function(d){
+				console.info("ep:message:"+d.data);
+				var j=eval('('+d.data+')');
+				switch(s){
+				case 0:
+					if(j.method){
+						switch(j.method){
+						case 'miigs:endpt:hello':
+							startCp(j.params[0]);
+							console.info("device open!");
+							break;
+						case 'miigs:endpt:byebye':
+							console.info("device close!");
+							//クローズ
+							break;
+						default:
+							//そのまま転送
+						}
+					}					
+					break;
+				}
+			};
+			ep_ws.onclose=function(){
+				console.info("ep:close");
+			}
+		}		
+		function startCp(epid){
+			var s;
+			cp_ws=new WebSocket("ws://127.0.0.1:9300/ctrlpt?ep="+epid);	
+			cp_ws.onopen=function(){
+				console.info("cp:open");
+//				cp_ws.send('{"jsonrpc":"2.0","method":"miigs:ctrlt:new","params":["'+epid+'"],"id":0}');
+				s=0;
+			};
+			cp_ws.onmessage=function(d){
+			};
+			cp_ws.onclose=function(){
+				console.info("cp:close");
+			}
+		}
+		startEp();
+		$("#close_cp").click(
+			function(){
+				cp_ws.close();
+			}
+		);
+		$("#close_ep").click(
+			function(){
+				ep_ws.close();
+			}
+		);		
+		
+	});
+	</script>
+</head>
+<body>
+<h2>ProxyTest</h2>
+<button id="close_ep">Close EndPt</button>
+<button id="close_cp">Close CtrlPt</button>
+</body>
+</html>

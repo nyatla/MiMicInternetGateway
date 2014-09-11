@@ -1,0 +1,364 @@
+<!DOCTYPE html>  
+<html lang="ja">  
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<link href="./extlib/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<title>MiMic Internet gateway</title>  
+	<style>
+	.header{
+		text-align:center;
+	}
+	.header b{
+		font-size:32pt;
+	}
+	#mimic_addr{
+		width:50%;
+	}
+	#share_url{
+		width:80%;
+		font-size:12pt;
+	}
+
+	</style>
+	<script type="text/javascript" src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
+	<script type="text/javascript" src="./wsendpoint.js"></script>
+	<script type="text/javascript" src="./extlib/jquery-2.1.1.js"></script>
+	<script type="text/javascript" src="./extlib/bootstrap/js/bootstrap.js"></script>
+	<script>
+	//mbedの接続テスト
+	function testMbed(v,cb){
+		var ret=null;
+		var mcu=new mbedJS.Mcu(v,{
+			onNew:function(){
+				mcu.getInfo(function(v){
+					ret=v;mcu.close();
+				});
+			},
+			onClose:function(){
+				cb(ret);
+			},
+			onError:function(){
+				cb(null);
+			}
+		});
+	}
+	/**
+	 * onSuccess　開始に成功した。
+	 * onFailed 開始に失敗した。
+	 * onError サーバ通信中のエラー
+	 * onOffline サーバ接続の終了
+	 *
+	 */
+	function startConnection(addr,logger,cb)
+	{
+		 logger.info("mbedJS("+addr+")の接続テストをしています。");
+		 testMbed(addr,function(m){
+			if(!m){
+				logger.error("mbedJS("+addr+")のテストに失敗しました。接続できません。");
+				cb.onFailed();
+				return;
+			}
+			logger.info(
+				"mbedJS("+addr+")のテストに成功しました。<br/>"+
+				"Version:"+m.version+"Platform:"+m.platform+"Mcu/Eth:"+m.mcu.name+"/"+m.mcu.eth);
+			logger.info("mbedJS("+addr+")のテストに成功しました。");
+			logger.info("MiMicIGSと接続しています。");
+    		var cn=new Content();
+    		var started=false;
+    		function stop(){
+           		logger.info("MiMicIGSを停止しています。");
+    			cn.stop();
+    		}
+    		cn.start("ws://"+addr+"/rpc/");
+           	cn.onOnline=function(v){
+           		started=true;
+           		logger.info("MiMicIGSに接続しました。<br/>アクセスID=<a href='"+v+"'>"+v+"</a>");
+           		$("#share_url").val(v);
+           		//引数に終了関数
+    			cb.onSuccess(v,stop);
+            };
+           	cn.onOffline=function(){
+           		logger.info("MiMicIGSから切断しました。共有システムを終了します。");
+    			cb.onOffline();
+           		cn=null;
+           	};
+           	cn.onOpen=function(){
+           		logger.info("コントロールポイントがオープンしました。");
+           		//相手がオープンした
+           	};
+           	cn.onClose=function(){
+           		logger.info("コントロールポイントがクローズしました。");
+           	};
+           	cn.onWsOpen=function(){
+           		logger.info("Open in local Websocket connection");
+           	};           	
+           	cn.onWsClose=function(){
+           		logger.info("Close in local Websocket connection");
+           	};           	
+           	cn.onWsRx=function(v){
+           		logger.rx(v);
+           	};        	
+           	cn.onWsTx=function(v){
+           		logger.tx(v);
+           	};
+           	cn.onWsError=function(){
+           		logger.info("Error in local Websocket connection");
+           	}
+           	cn.onError=function(){
+    			if(started){
+    				logger.error("MiMicIGSとの通信に失敗しました。接続を継続できません。");
+    				cb.onError();
+    			}else{
+               		logger.error("MiMicIGSとの接続中にエラーが発生しました。");
+    				cb.onFailed();
+    			}
+           		cn=null;
+           	};
+           	cn.onMessage=function(v){
+           		logger.rx(v);
+           	};
+		});
+	}
+	function LogTag(id)
+	{
+		$(id).empty();
+		var _t=this;
+		this.append=function(l,t,v)
+		{
+			var d=new Date();
+			var ds="["+d.getHours()+":"+d.getMinutes()+":"+d.getSeconds()+"]";
+			$(id).prepend('<div><span class="label label-'+t+'">'+l+'</span>'+ds+v+'<div>');
+			var num_of_line=$(id+">div").size();
+			if(num_of_line>10){
+				$(id+">div:last-child").remove();
+			}
+		}
+		this.info=function(v){_t.append("Info","info",v);};
+		this.error=function(v){_t.append("Error","danger",v);};
+		this.rx=function(v){_t.append("RX","success",v);};
+		this.tx=function(v){_t.append("TX","warning",v);};
+	}
+	function Ui(){
+		var _t=this;
+		/** コントロールを全部disableにするやつ*/
+		this.enable=function(v)
+		{
+			$("input,button").attr('disabled',v?false:true);
+		};
+		this.setMode=function(i_s){
+			switch(i_s){
+			case 0:
+				//初期画面
+				switch(_t._current_mode){
+				default:
+					$("#pol").hide();
+					$("#title").hide();
+					$("#content").hide();
+					$("#step1").hide();
+					$("#step2").hide();
+					$("#title").fadeIn(300);
+					break;
+				}
+				break;
+			case 1:
+				//接続情報画面
+				switch(_t._current_mode){
+				case 0:
+					$("#step1").show();
+					$("#pol").show();
+		        	$("#pol").fadeOut(800);
+					
+		        	$("#title").fadeOut(300,
+		            	function(){$("#content").fadeIn(300);
+		            });
+					break;
+				case 2:
+		        	$("#step2").fadeOut(300,
+		            	function(){$("#step1").fadeIn(300);
+		            });
+					break;
+				}
+				break;
+			case 2:	//接続中画面
+				switch(_t._current_mode){
+				case 1:
+		        	$("#step1").fadeOut(300,
+		            	function(){$("#step2").fadeIn(300);
+		            });
+					break;
+				}
+				break;			
+			}
+			_t._current_mode=i_s;
+		}
+		this.setMode(0);
+		this.enable(true);
+		$('#share_url').focus(function(){
+		    $(this).select();
+		});		
+	}
+	Ui.prototype={
+		_current_mode:-1
+	}
+	
+	$(document).ready(function(){
+		function mbeeeed(){
+			var c=10;
+			var tid=setInterval(function(){
+				console.log(c);
+				$("#pol").css("fontSize",parseInt(c)+"px");
+				c*=1.1;
+				if(c>300){
+					clearInterval(tid);
+				}
+			},20);
+		}
+			
+		
+		
+		
+		var ui=new Ui();
+        $("#btn_ready").click(function(){
+        	mbeeeed();
+			ui.setMode(1);
+        });
+        $("#btn_test").click(function(){
+        	ui.enable(false);
+        	var addr=$("#mimic_addr").val();
+        	testMbed(addr,function(v){
+        		if(v){
+        			alert(
+           			"mbedJS("+addr+")は利用可能です。\n\n"+
+        			"Version:"+v.version+
+        			"Platform:"+v.platform+
+        			"Mcu/Eth:"+v.mcu.name+"/"+v.mcu.eth
+        			);
+        		}else{
+            		alert(
+            			"mbedJS("+addr+")は利用できません。\n次の問題をチェックしてください。\n\n"+
+            			"1. mbedJSがネットワークに接続されていますか？\n"+
+            			"2. 他のアプリケーションがmbedJSを利用していませんか？\n"+
+            			"3. mbedJSのIPアドレスが間違っていませんか？\n"+
+            			"4. ネコが長すぎます。"
+            			);
+        		}
+            	ui.enable(true);
+        	});
+        });
+        var stop_func=null;
+        $("#btn_start").click(function(){
+        	ui.enable(false);
+        	var addr=$("#mimic_addr").val();
+			var logger=new LogTag("#console");
+    		startConnection(addr,logger,{
+    			onSuccess:function(v,func){
+    				//接続成功。
+    				stop_func=func;
+    				ui.setMode(2);
+    	        	ui.enable(true);
+    			},
+    			onFailed:function(){
+    	        	//接続失敗
+    				ui.enable(true);
+    			},
+    			onOffline:function(f){
+    				//正常終了
+    				ui.setMode(1);
+    	        	ui.enable(true);
+    			},
+    			onError:function(f){
+    				//異常終了
+    				ui.setMode(1);
+    	        	ui.enable(true);
+    			}
+    		});
+
+//        	ui.setMode(2);
+        });        
+        $("#btn_stop").click(function(){
+        	if(stop_func!=null){
+        		stop_func();
+	        	ui.enable(false);
+	        	stop_func=null;
+        	}
+        });
+        
+        $("#XX").click(function(){
+        	//mbed接続テスト
+        	testMbed("192.168.128.39:80",
+        	function(r){
+        		if(r){
+	    			alert(r);
+        		}else{
+        			//mbedに接続できませんね。
+        		}
+        	});
+        });
+        $("#stop").click(function(){
+        });
+	});
+
+	</script>
+
+</head>
+<body>
+<div class="container">
+<div id="title">
+	<h1 class="text-center">mbedJS Internet Gateway</h1>
+	<p class="text-center" style="margin:30px 0px;font-size:12pt;">
+	このシステムは、mbedJSのAPIを一時的にインターネットで共有するためのシステムです。<br/>
+	インターネットを使って世界のどこからでもmbedを操作することができます。
+	</p>
+	<p class="text-center">
+	<button id="btn_ready" class="btn btn-lg btn-default">mbedJSの共有をはじめる</button>
+	</p>
+	<div class="alert alert-info" style="margin:30px 0px;">
+		<h4 class=" text-center">制限と免責事項</h4>
+		<ul style="font-size:9pt;">
+		<li>ユーザーは公開されたmbedJSを完全に制御することができます。無人環境では使わないでください。</li>
+		<li>このシステムはインターネットを経由するため、操作速度が低下します。高速な制御は出来ません。</li>
+		<li>MiMicProjectは、本システムを利用したことにより発生した全ての損害、及び、第三者に与えた全ての損害に対して、一切の責任を負いません。</li>
+		</ul>
+	</div>
+	<div class="text-center" style="clear:both">
+		MiMic project<br/>Copyright (C) 2011-2014 <a href="http://nyatla.jp/">Mimic project@nyatla.jp</a> All Rights Reserved.
+	</div>	
+</div>
+<div id="content">
+	<span>mbadJS Internet Gateway</span>
+	<hr/>
+	<div id="step1">
+		<h2>mbedJSの設定情報の入力</h2>
+		<p class="" style="margin:30px 0px 0px 0px;font-size:12pt;">
+		mbedJSを公開するための情報を入力してください。,<br/>
+		準備が出来たら開始ボタンを押してください。シェアURLを発行します。
+		</p>
+		<div class="text-left" style="margin:50px 0px;">
+		<h4>あなたのmbedJSのローカルIPアドレス</h4>
+		<input type="text" id="mimic_addr"></input>
+		</div>
+		<p class="text-right" style="margin:50px 0px;">
+		<button id="btn_start" class="btn btn-lg btn-default">共有を開始</button>
+		<button id="btn_test" class="btn btn-lg btn-default">接続をテスト</button>
+		</p>
+	</div>
+	<div id="step2">
+		<h2>mbedJSの共有に成功しました</h2>
+		<div class="text-left" style="margin:50px 0px;">
+			<h4>あなたのmbedJSのシェアURL</h4>
+			<input id="share_url" type="text" readonly></input><br/>
+			<a href="ごめんまだかいてない">シェアURLの使い方</a>
+		</div>
+		<p class="text-right" style="margin:50px 0px;">
+			<button id="btn_stop" class="btn btn-lg btn-default">共有を終了</button>
+		</p>
+	</div>
+	<div id="console"></div>
+</div>
+
+</div>
+<div style="position:absolute;text-align:center;width:100%;top:25%;" id="pol">ｴｪｪｪｪﾝﾍﾞｯﾄﾞ</div>
+
+
+</body>
+</html>

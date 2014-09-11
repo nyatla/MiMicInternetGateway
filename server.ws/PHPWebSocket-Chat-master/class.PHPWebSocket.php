@@ -14,12 +14,8 @@
 */
 
 
-abstract class PHPWebSocket
+class PHPWebSocket
 {
-	abstract protected function OnMessage($clientID, $message, $messageLength, $binary);
-	abstract protected function OnOpen($clientID);
-	abstract protected function OnClose($clientID, $status);	
-	
 	// maximum amount of clients that can be connected at one time
 	const WS_MAX_CLIENTS = 100;
 
@@ -74,7 +70,7 @@ abstract class PHPWebSocket
 	public $wsRead          = array();
 	public $wsClientCount   = 0;
 	public $wsClientIPCount = array();
-	public $_handler=array();
+	public $wsOnEvents      = array();
 
 	/*
 		$this->wsClients[ integer ClientID ] = array(
@@ -90,7 +86,6 @@ abstract class PHPWebSocket
 			9 => string    FrameBuffer,                       // joined onto end as a frame's data comes in, reset to blank string when all frame data has been read
 			10 => integer  MessageOpcode,                     // stored by the first frame for fragmented messages, default value is 0
 			11 => integer  MessageBufferLength                // the payload data length of MessageBuffer
-			100=> string   HTTP path
 		)
 
 		$wsRead[ integer ClientID ] = resource Socket         // this one-dimensional array is used for socket_select()
@@ -263,8 +258,10 @@ abstract class PHPWebSocket
 	function wsRemoveClient($clientID) {
 		// fetch close status (which could be false), and call wsOnClose
 		$closeStatus = $this->wsClients[$clientID][5];
-		//event
-		$this->onClose($clientID, $closeStatus);
+		if ( array_key_exists('close', $this->wsOnEvents) )
+			foreach ( $this->wsOnEvents['close'] as $func )
+				$func($clientID, $closeStatus);
+
 		// close socket
 		$socket = $this->wsClients[$clientID][0];
 		socket_close($socket);
@@ -306,8 +303,10 @@ abstract class PHPWebSocket
 			$result = $this->wsProcessClientHandshake($clientID, $buffer);
 			if ($result) {
 				$this->wsClients[$clientID][2] = self::WS_READY_STATE_OPEN;
-				//event
-				$this->onOpen($clientID);
+
+				if ( array_key_exists('open', $this->wsOnEvents) )
+					foreach ( $this->wsOnEvents['open'] as $func )
+						$func($clientID);
 			}
 		}
 		else {
@@ -570,7 +569,9 @@ abstract class PHPWebSocket
 			$this->wsRemoveClient($clientID);
 		}
 		elseif ($opcode == self::WS_OPCODE_TEXT || $opcode == self::WS_OPCODE_BINARY) {
-			$this->onMessage($clientID, $data, $dataLength, $opcode == self::WS_OPCODE_BINARY);
+			if ( array_key_exists('message', $this->wsOnEvents) )
+				foreach ( $this->wsOnEvents['message'] as $func )
+					$func($clientID, $data, $dataLength, $opcode == self::WS_OPCODE_BINARY);
 		}
 		else {
 			// unknown opcode
@@ -593,7 +594,7 @@ abstract class PHPWebSocket
 		$requestParts = explode(' ', $request);
 		$requestPartsSize = sizeof($requestParts);
 		if ($requestPartsSize < 3) return false;
-		$this->wsClients[$clientID][100]=$requestParts[1];
+
 		// check request method is GET
 		if (strtoupper($requestParts[0]) != 'GET') return false;
 
@@ -739,6 +740,19 @@ abstract class PHPWebSocket
 	function log( $message )
 	{
 		echo date('Y-m-d H:i:s: ') . $message . "\n";
+	}
+
+	function bind( $type, $func )
+	{
+		if ( !isset($this->wsOnEvents[$type]) )
+			$this->wsOnEvents[$type] = array();
+		$this->wsOnEvents[$type][] = $func;
+	}
+
+	function unbind( $type='' )
+	{
+		if ( $type ) unset($this->wsOnEvents[$type]);
+		else $this->wsOnEvents = array();
 	}
 }
 ?>

@@ -1,0 +1,38 @@
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>mbedJS IGS Led Blink</title>  
+	<script src="../extlib/jquery-2.1.1.js"></script>
+	<script src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
+	<script>
+	$("document").ready(function(){
+		
+		$("#start_cp").click(function(){
+			var cp_ws;
+			function startCp(epid){
+				var s;
+				console.info("ws://127.0.0.1:9300/ctrlpt?ep="+$("#idd").val());
+				cp_ws=new WebSocket("ws://127.0.0.1:9300/ctrlpt?ep="+$("#idd").val());	
+				cp_ws.onopen=function(){
+					console.info("cp:open");
+					cp_ws.send('{"jsonrpc":"2.0","method":"mbedJS:Mcu:getInfo","params":[],"id":0}');
+				};
+				cp_ws.onmessage=function(d){
+					console.info("cp:"+d.data);
+				};
+				cp_ws.onclose=function(){
+					console.info("cp:close");
+				}
+			}
+			startCp();
+		})
+	});
+	</script>
+</head>
+<body>
+<h2>ProxyTest</h2>
+<input id="idd" value=""></input>
+<button id="start_cp">test</button>
+
+</body>
+</html>
