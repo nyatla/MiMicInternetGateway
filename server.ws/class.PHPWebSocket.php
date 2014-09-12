@@ -583,11 +583,9 @@ abstract class PHPWebSocket
 		// fetch headers and request line
 		$sep = strpos($buffer, "\r\n\r\n");
 		if (!$sep) return false;
-echo __LINE__."\n";
 		$headers = explode("\r\n", substr($buffer, 0, $sep));
 		$headersCount = sizeof($headers); // includes request line
 		if ($headersCount < 1) return false;
-echo __LINE__."\n";
 		
 		// fetch request and check it has at least 3 parts (space tokens)
 		$request = &$headers[0];
@@ -596,15 +594,12 @@ echo __LINE__."\n";
 		if ($requestPartsSize < 3) return false;
 		$this->wsClients[$clientID][100]=$requestParts[1];
 		// check request method is GET
-echo __LINE__."\n";
 		if (strtoupper($requestParts[0]) != 'GET') return false;
-echo __LINE__."\n";
 		
 		// check request HTTP version is at least 1.1
 		$httpPart = &$requestParts[$requestPartsSize - 1];
 		$httpParts = explode('/', $httpPart);
 		if (!isset($httpParts[1]) || (float) $httpParts[1] < 1.1) return false;
-echo __LINE__."\n";
 		
 		// store headers into a keyed array: array[headerKey] = headerValue
 		$headersKeyed = array();
@@ -614,18 +609,14 @@ echo __LINE__."\n";
 
 			$headersKeyed[strtolower(trim($parts[0]))] = trim($parts[1]);
 		}
-echo __LINE__."\n";
-print_r($headersKeyed);
 		
 		// check Host header was received
 		if (!isset($headersKeyed['host'])) return false;
-echo __LINE__."\n";
 		
 		// check Sec-WebSocket-Key header was received and decoded value length is 16
 		if (!isset($headersKeyed['sec-websocket-key'])) return false;
 		$key = $headersKeyed['sec-websocket-key'];
 		if (strlen(base64_decode($key)) != 16) return false;
-echo __LINE__."\n";
 		
 		// check Sec-WebSocket-Version header was received and value is 7
 		if (!isset($headersKeyed['sec-websocket-version']) || (int) $headersKeyed['sec-websocket-version'] < 7) return false; // should really be != 7, but Firefox 7 beta users send 8

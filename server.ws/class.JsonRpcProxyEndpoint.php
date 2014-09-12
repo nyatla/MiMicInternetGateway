@@ -17,8 +17,11 @@ class JsonRpcProxyEndpoint extends JsonRpcProxyConnection
 		$this->log(__METHOD__.':'.$i_json->src);
 		if($i_json->isResult()){
 			//Epから送られてくるresultは全部スルーパス
-			$this->_peer->wsSend($i_json->src);
-			return;				
+			if(isset($this->_peer)){
+				//peer切断後にonJsonとかあるみたい
+				$this->_peer->wsSend($i_json->src);
+			}
+			return;
 		}
 		if($i_json->isMethod()){
 			//制御コマンド

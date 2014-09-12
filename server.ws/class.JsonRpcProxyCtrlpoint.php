@@ -38,7 +38,10 @@ class JsonRpcProxyCtrlpoint extends JsonRpcProxyConnection
 		}
 		$this->log($i_json->src);
 		//そのままpeerへ送信
-		$this->_peer->wsSend($i_json->src);
+		if(isset($this->_peer)){
+			//peer切断後にonJsonがあった時の保険
+			$this->_peer->wsSend($i_json->src);
+		}
 	}
 	public function onClose()
 	{
