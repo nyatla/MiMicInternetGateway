@@ -1,4 +1,6 @@
-var IGS_URL="ws://localhost:9300/endpt";
+var IGS_HOST="localhost:9300";
+var IGS_PATH="/";
+var IGS_ENDPOINT_URL='ws://'+IGS_HOST+IGS_PATH+'endpt';
 function __log(m)
 {
 //	console.info(m);
@@ -76,12 +78,9 @@ function Content()
 		if(ws_igs){
 			throw "already started!"
 		}
-		//フルパス再構築
-		var full_path=location.href;
+
 		//IgsWebsocketの開始
-		
-		
-		ws_igs=new WebSocket(IGS_URL);
+		ws_igs=new WebSocket(IGS_ENDPOINT_URL);
 		ws_igs.onopen=function(){
 			__log("igs.onopen");
 		}
@@ -162,7 +161,8 @@ function Content()
 			}
 		}
 		
-		function ommessage_1st(i_m){
+		function ommessage_1st(i_m)
+		{
 			//開始時のnotify(ready)
 			__log("igs.onmessage:"+i_m.data);
 			var json=eval('('+i_m.data+')');
@@ -174,7 +174,7 @@ function Content()
 			}
 			var msg_q=null;//helloの後接続されるまでのキュー
 			ws_igs.onmessage=onmessage_2nd;
-			if(_t.onOnline){_t.onOnline(json.params[0]);}
+			if(_t.onOnline){_t.onOnline("ws://"+IGS_HOST+IGS_PATH+"ctrlpt?ep="+json.params[0]);}
 		}
 		ws_igs.onmessage=ommessage_1st;
 	}

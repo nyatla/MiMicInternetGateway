@@ -18,6 +18,10 @@
 		width:80%;
 		font-size:12pt;
 	}
+	#share_url_px
+	{
+		font-size:16pt;
+	}
 
 	</style>
 	<script type="text/javascript" src="http://mimic.sourceforge.jp/jsapi/mbedJS.all.js"></script>
@@ -195,7 +199,11 @@
 		this.enable(true);
 		$('#share_url').focus(function(){
 		    $(this).select();
-		});		
+		});
+		$('#share_url').click(function(){
+		    $(this).select();
+		});				
+		
 	}
 	Ui.prototype={
 		_current_mode:-1
@@ -347,7 +355,7 @@
 		<div class="text-left" style="margin:50px 0px;">
 			<h4>あなたのmbedJSのシェアURL</h4>
 			<input id="share_url" type="text" readonly></input><br/>
-			<a href="ごめんまだかいてない">シェアURLの使い方</a>
+			<a href="#">シェアURLの使い方</a>
 		</div>
 		<p class="text-right" style="margin:50px 0px;">
 			<button id="btn_stop" class="btn btn-lg btn-default">共有を終了</button>
